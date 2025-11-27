@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Data files
+data/raw/*.csv
+data/raw/*.zip
+*.csv
+*.zip
+
+# Models
+*.pkl
+*.h5
+*.pt
+*.pth
+*.ckpt
+data/models/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+kaggle.json
+
