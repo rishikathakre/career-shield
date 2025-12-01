@@ -5,6 +5,16 @@ Fine-tuned BERT/DistilBERT model for fake job posting detection.
 import pandas as pd
 import numpy as np
 import torch
+
+# Ensure accelerate is available before importing transformers
+try:
+    import accelerate
+except ImportError:
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "accelerate>=0.26.0", "-q"])
+    import accelerate
+
 from transformers import (
     AutoTokenizer, 
     AutoModelForSequenceClassification,
@@ -76,10 +86,14 @@ class BERTModel:
             texts.tolist(),
             truncation=True,
             padding=True,
-            max_length=512
+            max_length=512,
+            return_tensors=None
         )
         
-        dataset_dict = {'input_ids': encodings['input_ids']}
+        dataset_dict = {
+            'input_ids': encodings['input_ids'],
+            'attention_mask': encodings['attention_mask']
+        }
         if labels is not None:
             dataset_dict['labels'] = labels.tolist()
         
@@ -133,21 +147,43 @@ class BERTModel:
             logger.info("Preparing validation dataset...")
             eval_dataset = self.prepare_dataset(val_texts, val_labels)
         
+        # Ensure accelerate is imported before creating TrainingArguments
+        try:
+            import accelerate
+            logger.info(f"accelerate version: {accelerate.__version__}")
+        except ImportError:
+            logger.error("accelerate not found. Please install: pip install accelerate>=0.26.0")
+            raise
+        
+        # Check if GPU is available
+        use_gpu = torch.cuda.is_available()
+        if use_gpu:
+            logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
+        else:
+            logger.info("Using CPU - training will be slower. Consider using Google Colab with free GPU.")
+            logger.info("Optimizing for CPU: reducing batch size and using fewer workers.")
+        
+        # Optimize batch size for CPU
+        effective_batch_size = batch_size if use_gpu else min(batch_size, 4)
+        
         # Training arguments
         training_args = TrainingArguments(
             output_dir=output_dir,
             num_train_epochs=num_epochs,
-            per_device_train_batch_size=batch_size,
-            per_device_eval_batch_size=batch_size,
+            per_device_train_batch_size=effective_batch_size,
+            per_device_eval_batch_size=effective_batch_size,
             learning_rate=learning_rate,
             weight_decay=0.01,
             logging_dir=f'{output_dir}/logs',
-            logging_steps=100,
+            logging_steps=50,  # More frequent logging
             eval_strategy='epoch' if eval_dataset else 'no',
             save_strategy='epoch',
             load_best_model_at_end=True if eval_dataset else False,
             metric_for_best_model='f1' if eval_dataset else None,
-            greater_is_better=True
+            greater_is_better=True,
+            fp16=use_gpu,  # Use mixed precision on GPU for faster training
+            dataloader_num_workers=0,  # 0 workers for CPU to avoid overhead
+            dataloader_pin_memory=False,  # Disable pin memory on CPU
         )
         
         # Initialize trainer

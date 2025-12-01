@@ -123,6 +123,10 @@ def save_data(df: pd.DataFrame, filepath: str) -> None:
         filepath: Path to save CSV file
     """
     try:
+        # Create directory if it doesn't exist
+        from pathlib import Path
+        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+        
         df.to_csv(filepath, index=False)
         logger.info(f"Saved {len(df)} rows to {filepath}")
     except Exception as e:
