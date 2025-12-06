@@ -3,7 +3,6 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import numpy as np
 import time
-
 # --- 1. CONFIGURATION & STYLE ---
 st.set_page_config(
     page_title="Career Shield | AI Fraud Detection",
