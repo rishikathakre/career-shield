@@ -40,19 +40,17 @@ st.markdown("""
 # --- 2. LOAD MODEL ---
 @st.cache_resource
 def load_model():
-    local_path = "/content/bert_local_save/"
-    drive_path = "/content/drive/MyDrive/Career Shield/data/models/bert_finetuned/"
+    # Path where BERT model files are saved
+    model_path = "models"  # models/ folder in project root
+    
     try:
-        tokenizer = AutoTokenizer.from_pretrained(local_path)
-        model = AutoModelForSequenceClassification.from_pretrained(local_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = AutoModelForSequenceClassification.from_pretrained(model_path)
         return tokenizer, model
-    except:
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(drive_path)
-            model = AutoModelForSequenceClassification.from_pretrained(drive_path)
-            return tokenizer, model
-        except:
-            return None, None
+    except Exception as e:
+        st.error(f"❌ Model not found: {e}")
+        st.info("💡 Make sure all model files are in the 'models/' folder.")
+        return None, None
 
 tokenizer, model = load_model()
 
