@@ -293,17 +293,18 @@ Core Responsibilities:
 
 Required Experience:
 - PhD or Master's in Computer Science, AI/ML, or equivalent experience
-- 10+ years of hands-on experience with Large Language Models and GPT architectures
-- 8+ years working with transformer-based models in production environments
-- 5+ years experience with ChatGPT and GPT-4
-- 10+ years of Python programming experience
+- 10+ years of hands-on experience with Large Language Models
+- 9+ years working with transformer-based architectures
+- 6+ years experience with ChatGPT integration and prompt engineering
+- 4+ years hands-on with GPT-4 and Claude
+- 12+ years of Python programming experience
 - Deep expertise in PyTorch and TensorFlow
 - Strong understanding of distributed systems and cloud infrastructure
 - Track record of deploying ML models at scale
 
 Preferred Qualifications:
 - Publications in top-tier ML conferences (NeurIPS, ICML, ACL)
-- 4+ years working with Claude AI
+- 3+ years working with LLaMA models
 - 7+ years with modern MLOps tools and practices
 - Open-source contributions to ML frameworks
 
@@ -360,12 +361,21 @@ with col_right:
                 # Impossible jobs detection
                 impossible_result = impossible_detector.detect_impossible_requirements(job_text)
                 
-                # Combine AI and rule-based scores
+                # Combine AI, rule-based scores, AND impossible requirements
                 combined_confidence = fake_score
+                
+                # Impossible requirements are a MAJOR red flag
+                if impossible_result['has_impossible_requirements']:
+                    impossible_count = impossible_result['impossible_count']
+                    # Each impossible requirement adds to suspicion
+                    impossible_boost = min(0.3, impossible_count * 0.15)  # Up to 30% boost
+                    combined_confidence = max(fake_score, fake_score + impossible_boost, 0.6)
+                
+                # Rule-based scam patterns
                 if rule_risk_score > 30:  # High rule-based risk
-                    combined_confidence = max(fake_score, 0.7)  # Boost confidence
+                    combined_confidence = max(combined_confidence, 0.7)
                 elif rule_risk_score > 15:  # Medium rule-based risk
-                    combined_confidence = max(fake_score, 0.55)
+                    combined_confidence = max(combined_confidence, 0.55)
 
                 # --- SHOW RESULTS ---
                 st.markdown("<br>", unsafe_allow_html=True)

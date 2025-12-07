@@ -95,11 +95,16 @@ class ImpossibleJobsDetector:
         requirements = []
         
         # Pattern to match "X years of experience in/with Y" (handles 12+, 12-15, 12, etc.)
+        # Patterns ordered by priority - more specific patterns first
         patterns = [
-            r'(\d+)\+?\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using|working with)?\s*([a-z\s\-\.]+?)(?:\s+and|\.|,|;|$|\n)',
-            r'(\d+)\+?\s*years?\s*(?:of\s*)?([a-z\s\-\.]+?)\s*(?:experience|development)',
-            r'(\d+)\+?\s*years?\s*(?:working with|with|using)\s*([a-z\s\-\.]+?)(?:\s+and|\.|,|;|$|\n)',
-            r'minimum\s*(\d+)\+?\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using)?\s*([a-z\s\-\.]+?)(?:\.|,|;|$|\n)',
+            # "X years with/using Y" - most direct pattern
+            r'(\d+)\+?\s*years?\s*(?:working with|with|using|of)\s+([a-z][a-z\s\-\.]+?)(?:\s+and|\s+or|\.|,|;|$|\n)',
+            # "X years Y experience/development"
+            r'(\d+)\+?\s*years?\s+([a-z][a-z\s\-\.]+?)\s+(?:experience|development)',
+            # "X years of experience with Y"
+            r'(\d+)\+?\s*years?\s*of\s+experience\s+(?:with|in|using)\s+([a-z][a-z\s\-\.]+?)(?:\s+and|\s+or|\.|,|;|$|\n)',
+            # General fallback
+            r'(\d+)\+?\s*years?\s*(?:of\s*)?(?:experience\s+)?(?:in|with)?\s*([a-z][a-z\s\-\.]+?)(?:\s+and|\.|,|;|$|\n)',
         ]
         
         for pattern in patterns:
