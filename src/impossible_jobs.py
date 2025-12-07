@@ -74,7 +74,9 @@ class ImpossibleJobsDetector:
             technology_dates: Dictionary mapping technology names to release years
         """
         self.technology_dates = technology_dates or TECHNOLOGY_DATES
-        self.current_year = 2024  # Update as needed
+        # Automatically use current year instead of hardcoding
+        from datetime import datetime
+        self.current_year = datetime.now().year
         
     def extract_experience_requirements(self, text: str) -> List[Tuple[str, int]]:
         """
@@ -92,11 +94,12 @@ class ImpossibleJobsDetector:
         text_lower = text.lower()
         requirements = []
         
-        # Pattern to match "X years of experience in/with Y"
+        # Pattern to match "X years of experience in/with Y" (handles 12+, 12-15, 12, etc.)
         patterns = [
-            r'(\d+)\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using)?\s*([a-z\s]+?)(?:\.|,|;|$|\n)',
-            r'(\d+)\s*years?\s*(?:of\s*)?([a-z\s]+?)\s*experience',
-            r'minimum\s*(\d+)\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using)?\s*([a-z\s]+?)(?:\.|,|;|$|\n)',
+            r'(\d+)\+?\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using|working with)?\s*([a-z\s\-\.]+?)(?:\s+and|\.|,|;|$|\n)',
+            r'(\d+)\+?\s*years?\s*(?:of\s*)?([a-z\s\-\.]+?)\s*(?:experience|development)',
+            r'(\d+)\+?\s*years?\s*(?:working with|with|using)\s*([a-z\s\-\.]+?)(?:\s+and|\.|,|;|$|\n)',
+            r'minimum\s*(\d+)\+?\s*years?\s*(?:of\s*)?experience\s*(?:in|with|using)?\s*([a-z\s\-\.]+?)(?:\.|,|;|$|\n)',
         ]
         
         for pattern in patterns:
@@ -104,7 +107,13 @@ class ImpossibleJobsDetector:
             for match in matches:
                 years = int(match.group(1))
                 tech = match.group(2).strip()
-                requirements.append((tech, years))
+                
+                # Clean up technology name: remove trailing punctuation and extra spaces
+                tech = re.sub(r'[^\w\s\-\.]', '', tech).strip()
+                
+                # Skip empty or very short tech names
+                if len(tech) >= 2:
+                    requirements.append((tech, years))
         
         return requirements
     
@@ -119,16 +128,28 @@ class ImpossibleJobsDetector:
         Returns:
             Tuple of (is_impossible, technology_age)
         """
+        # Normalize technology name for better matching
+        tech_normalized = technology.lower().strip()
+        
         # Check for exact matches first
-        if technology in self.technology_dates:
-            tech_age = self.current_year - self.technology_dates[technology]
+        if tech_normalized in self.technology_dates:
+            tech_age = self.current_year - self.technology_dates[tech_normalized]
             return years_required > tech_age, tech_age
         
         # Check for partial matches (e.g., "transformer" in "transformer models")
+        # Also check with spaces replaced by hyphens and vice versa
+        tech_variants = [
+            tech_normalized,
+            tech_normalized.replace(' ', '-'),
+            tech_normalized.replace('-', ' '),
+            tech_normalized.replace('.', '')
+        ]
+        
         for tech_name, release_year in self.technology_dates.items():
-            if tech_name in technology or technology in tech_name:
-                tech_age = self.current_year - release_year
-                return years_required > tech_age, tech_age
+            for variant in tech_variants:
+                if tech_name in variant or variant in tech_name:
+                    tech_age = self.current_year - release_year
+                    return years_required > tech_age, tech_age
         
         # If technology not found, return None (unknown)
         return None, None
@@ -149,8 +170,13 @@ class ImpossibleJobsDetector:
         unknown_requirements = []
         
         for tech, years in requirements:
+            # Skip if technology name is too short or contains only special characters
+            if len(tech.strip()) < 3 or not any(c.isalpha() for c in tech):
+                continue
+                
             is_impossible, tech_age = self.check_technology_age(tech, years)
             
+            # Only add if we found a matching technology
             if is_impossible is None:
                 unknown_requirements.append({
                     'technology': tech,
