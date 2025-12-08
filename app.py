@@ -143,10 +143,8 @@ tokenizer, model = load_model()
 impossible_detector = ImpossibleJobsDetector()
 
 # Initialize session state for job text
-if 'job_text' not in st.session_state:
-    st.session_state.job_text = ""
-if 'sample_loaded' not in st.session_state:
-    st.session_state.sample_loaded = False
+if 'job_description_area' not in st.session_state:
+    st.session_state.job_description_area = ""
 
 # --- 3. LOGIC FUNCTIONS ---
 def calculate_scam_risk_score(text):
@@ -410,12 +408,41 @@ st.markdown("""
 # ==== SECTION 1: INPUT AREA (FULL WIDTH) ====
 st.markdown("## 📝 Job Description Input")
 
+# ==== URL SCRAPER SECTION (Process FIRST before text area) ====
+st.markdown("### 🔗 Fetch from URL (Experimental)")
+st.caption("⚠️ Works only with simple HTML sites. Most modern job boards (LinkedIn, Indeed, Workday) require manual copy-paste.")
+
+url_col1, url_col2 = st.columns([3, 1])
+
+with url_col1:
+    job_url = st.text_input("Job Posting URL:", placeholder="https://careers.company.com/job/12345", label_visibility="collapsed")
+
+with url_col2:
+    fetch_btn = st.button("📥 Fetch Job Description", use_container_width=True)
+
+if fetch_btn:
+    if not job_url or len(job_url.strip()) == 0:
+        st.warning("⚠️ Please enter a URL first.")
+    else:
+        with st.spinner("Fetching job description..."):
+            scrape_result = scrape_job_from_url(job_url.strip())
+            if scrape_result['success']:
+                st.success(f"✅ Job description fetched successfully! ({len(scrape_result['text'])} characters)")
+                st.session_state.job_description_area = scrape_result['text']
+                # Update the text area with fetched content
+                st.rerun()
+            else:
+                st.error(f"❌ {scrape_result['error']}")
+                st.info("💡 **Why this happens:** Modern job sites (LinkedIn, Indeed, Workday, etc.) use JavaScript to load content, which our scraper can't access.\n\n**✅ Solution:** Copy the job description directly from the webpage and paste it above. This gives you full control and better accuracy!")
+
+st.markdown("---")
+
 # Quick Load Buttons (4 across - full width)
 col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
 
 with col_btn1:
     if st.button("📋 Load Real Job"):
-        st.session_state.job_text = """Senior Software Engineer - Backend
+        st.session_state.job_description_area = """Senior Software Engineer - Backend
 
 Microsoft Corporation
 Redmond, WA (Hybrid)
@@ -455,10 +482,11 @@ Benefits:
 Microsoft is an equal opportunity employer. All qualified applicants will receive consideration for employment.
 
 To apply, visit careers.microsoft.com/us/en/job/1542876"""
+        st.rerun()
 
 with col_btn2:
     if st.button("🚨 Load Fake Job"):
-        st.session_state.job_text = """Payment Processing Coordinator - Work From Home
+        st.session_state.job_description_area = """Payment Processing Coordinator - Work From Home
 
 Global Financial Services Group
 Remote Position - Immediate Start Available
@@ -495,10 +523,11 @@ For fastest response, please contact our hiring coordinator on WhatsApp at +1-42
 Apply now - positions fill quickly! Send a brief message indicating your interest and availability to start immediately.
 
 Contact: recruitment@globalfinservices-group.com"""
+        st.rerun()
 
 with col_btn3:
     if st.button("⚠️ Impossible Job"):
-        st.session_state.job_text = """Lead Machine Learning Engineer
+        st.session_state.job_description_area = """Lead Machine Learning Engineer
 
 Nexus AI Technologies
 San Francisco, CA / Remote
@@ -549,46 +578,19 @@ Compensation Package:
 Our hiring process includes technical interviews, a take-home project, and team fit assessment. We value diverse perspectives and encourage applications from underrepresented groups in tech.
 
 Apply at: careers.nexusai.io/ml-lead or email talent@nexusai.io with your resume and GitHub profile."""
+        st.rerun()
 
 with col_btn4:
     if st.button("🗑️ Clear"):
-        st.session_state.job_text = ""
+        st.session_state.job_description_area = ""
+        st.rerun()
 
 # Text Area (FULL WIDTH)
-job_text = st.text_area("Paste job description here:", value=st.session_state.job_text, height=300, 
-                        placeholder="Paste the complete job description including company name, requirements, salary, benefits...", 
-                        key="job_text_input")
-
-# Update session state when user types
-if job_text != st.session_state.job_text:
-    st.session_state.job_text = job_text
-
-# ==== URL SCRAPER SECTION (PROMINENT) ====
-st.markdown("### 🔗 Fetch from URL (Experimental)")
-st.caption("⚠️ Works only with simple HTML sites. Most modern job boards (LinkedIn, Indeed, Workday) require manual copy-paste.")
-
-url_col1, url_col2 = st.columns([3, 1])
-
-with url_col1:
-    job_url = st.text_input("Job Posting URL:", placeholder="https://careers.company.com/job/12345", label_visibility="collapsed")
-
-with url_col2:
-    fetch_btn = st.button("📥 Fetch Job Description", use_container_width=True)
-
-if fetch_btn:
-    if not job_url or len(job_url.strip()) == 0:
-        st.warning("⚠️ Please enter a URL first.")
-    else:
-        with st.spinner("Fetching job description..."):
-            scrape_result = scrape_job_from_url(job_url.strip())
-            if scrape_result['success']:
-                st.success(f"✅ Job description fetched successfully! ({len(scrape_result['text'])} characters)")
-                st.session_state.job_text = scrape_result['text']
-                # Update the text area with fetched content
-                st.rerun()
-            else:
-                st.error(f"❌ {scrape_result['error']}")
-                st.info("💡 **Why this happens:** Modern job sites (LinkedIn, Indeed, Workday, etc.) use JavaScript to load content, which our scraper can't access.\n\n**✅ Solution:** Copy the job description directly from the webpage and paste it above. This gives you full control and better accuracy!")
+# Using key directly manages state properly across localhost and deployment
+job_text = st.text_area("Paste job description here:", 
+                        height=300, 
+                        placeholder="Paste the complete job description including company name, requirements, salary, benefits...",
+                        key="job_description_area")
 
 # Scan Button (FULL WIDTH)
 analyze_btn = st.button("🔍 SCAN FOR FRAUD", type="primary", use_container_width=True)
