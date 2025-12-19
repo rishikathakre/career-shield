@@ -1,102 +1,94 @@
-# Fake Job Posting Detection Using NLP
+# Career Shield: AI-Powered Job Fraud Detection
 
-## Project Overview
-An NLP-based classifier that distinguishes real job postings from fake ones using semantic and sentiment cues. This project helps job seekers and recruitment platforms prevent fraud and improve trust.
+## Overview
+An NLP-based fraud detection system that identifies fake job postings using fine-tuned DistilBERT. Achieves **98% accuracy** with **84% precision** on fake job detection.
 
 ## Features
-- **Baseline Model**: TF-IDF + Logistic Regression for comparison
-- **Advanced Model**: Fine-tuned BERT/DistilBERT classifier
-- **Bonus Feature**: Impossible jobs detection (e.g., requiring 10 years of experience in technologies that are only 8 years old)
-- **Interactive Dashboard**: Streamlit app for real-time predictions
+- Fine-tuned DistilBERT classifier
+- TF-IDF + Logistic Regression baseline (96.46% accuracy)
+- Rule-based pattern matching for scam indicators
+- Impossible requirements detection (validates experience vs. technology age)
+- Interactive Streamlit dashboard with explainable results
 
 ## Tech Stack
-- Python 3.8+
-- TensorFlow / PyTorch
-- Hugging Face Transformers (BERT/DistilBERT)
-- Streamlit
-- scikit-learn
+- Python 3.8+, PyTorch, Hugging Face Transformers
+- scikit-learn, pandas, Streamlit
+- Git LFS (for large model files)
 
 ## Dataset
-Kaggle "Fake Job Posting Prediction" dataset (18K+ labeled job listings)
-
-## Project Structure
-```
-fake-job-detection/
-├── data/
-│   ├── raw/              # Original dataset
-│   ├── processed/        # Cleaned and preprocessed data
-│   └── models/           # Saved models
-├── notebooks/            # Jupyter notebooks for exploration
-├── src/                  # Source code
-├── dashboard/            # Streamlit dashboard
-├── tests/                # Unit tests
-├── requirements.txt
-└── README.md
-```
+Kaggle "Fake Job Posting Prediction" - 17,880 labeled job postings (95.2% real, 4.8% fake)
 
 ## Setup Instructions
 
-### 1. Clone the repository
+### Important: Git LFS Required
+**The model file (`model.safetensors`, ~270MB) requires Git LFS.** Without it, the app won't work!
+
 ```powershell
-git clone <repository-url>
-cd "fake-job-detection"
+# Install Git LFS first
+winget install -e --id GitHub.GitLFS  # Windows
+# brew install git-lfs                # macOS
+# sudo apt-get install git-lfs        # Linux
+
+git lfs install
 ```
 
-### 2. Create virtual environment
+### Installation
+
 ```powershell
+# 1. Clone repository
+git clone https://github.com/rishikathakre/career-shield.git
+cd career-shield
+
+# 2. If model.safetensors is only a few KB (not ~270MB), run:
+git lfs pull
+
+# 3. Create virtual environment
 python -m venv venv
-.\venv\Scripts\Activate.ps1
-```
+.\venv\Scripts\Activate.ps1  # Windows PowerShell
 
-### 3. Install dependencies
-```powershell
+# 4. Install dependencies
 pip install -r requirements.txt
-```
 
-### 4. Download dataset
-- Download from Kaggle: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction
-- Place the CSV file in `data/raw/` directory
-- Or use Kaggle API:
-```powershell
-kaggle datasets download -d shivamb/real-or-fake-fake-jobposting-prediction -p data/raw/
-```
-
-### 5. Run the dashboard
-```powershell
-streamlit run dashboard/app.py
+# 5. Run the dashboard
+streamlit run app.py
 ```
 
 ## Usage
 
-### Training Models
-```powershell
-# Train baseline model
-python src/baseline_model.py
+1. Launch the Streamlit app: `streamlit run app.py`
+2. Input a job description (paste text or enter URL)
+3. View fraud detection results with explainable reasoning
 
-# Train BERT model
-python src/bert_model.py
+### Retraining Models (Optional)
+
+Pre-trained models are included. To retrain, run notebooks in `notebooks/` directory:
+- `01_eda.ipynb` - Data exploration
+- `02_preprocessing.ipynb` - Data cleaning
+- `03_baseline_model.ipynb` - Baseline model
+- `04_bert_model.ipynb` - DistilBERT fine-tuning
+
+## Results
+
+| Model | Accuracy | Precision (Fake) | Recall (Fake) | F1-Score (Fake) |
+|-------|----------|------------------|---------------|-----------------|
+| Baseline (TF-IDF + LR) | 96.46% | 59.07% | 87.69% | 70.59% |
+| **DistilBERT** | **98.0%** | **84.0%** | 60.0% | **70.0%** |
+
+DistilBERT achieves +42% precision improvement with comparable F1-score.
+
+## Project Structure
+
+```
+career-shield/
+├── app.py              # Streamlit dashboard
+├── models/             # DistilBERT model (requires Git LFS!)
+├── data/               # Dataset and processed splits
+├── src/                # Source code modules
+├── notebooks/          # Jupyter notebooks
+└── requirements.txt
 ```
 
-### Using the Dashboard
-1. Start the Streamlit app: `streamlit run dashboard/app.py`
-2. Enter a job posting text in the input field
-3. View predictions from both baseline and BERT models
-4. Check for impossible job requirements
-
-## Evaluation Metrics
-- Accuracy: 93%+ (target)
-- Precision, Recall, F1-score
-- Confusion Matrix
-
-## Project Timeline
-1.5 months sprint including:
-- Data exploration and preprocessing
-- Model development and fine-tuning
-- Evaluation and dashboard deployment
-
 ## Contributors
-[Your Team Members]
 
-## License
-[Your License]
+Harsh Shrishrimal, Rishika Thakre - University of Maryland, College Park
 
